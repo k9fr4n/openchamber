@@ -102,6 +102,8 @@ git pull
 ./scripts/update.sh
 ```
 
+Le script ne recrée le conteneur que si l'image a changé.
+
 L'image publiée est taguée `latest`, `vX.Y.Z` (ref upstream) et `sha-<commit>` ; pour épingler une version précise, définir `OPENCHAMBER_IMAGE=ghcr.io/k9fr4n/openchamber:vX.Y.Z` dans `.env`.
 
 ## Accès distant
@@ -133,7 +135,7 @@ L'image publiée est taguée `latest`, `vX.Y.Z` (ref upstream) et `sha-<commit>`
 ├── .github/workflows/build-image.yml  # build arm64 upstream → GHCR
 ├── docker-compose.yml                 # déploiement sur le Pi
 ├── .env.example                       # modèle de configuration
-├── scripts/update.sh                  # pull + recréation du conteneur
+├── scripts/update.sh                  # pull + recréation si l'image a changé
 └── data/, workspaces/                 # créés au premier lancement (ignorés par git)
 ```
 
