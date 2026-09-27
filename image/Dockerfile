@@ -40,13 +40,22 @@ RUN set -eux; \
         "patch=${PATCH_VERSION}" \
         "xz-utils=${XZ_UTILS_VERSION}" \
         "bzip2=${BZIP2_VERSION}" \
-        "tree=${TREE_VERSION}"; then \
+        "tree=${TREE_VERSION}" \
+        "iputils-ping=${IPUTILS_PING_VERSION}" \
+        "iputils-tracepath=${IPUTILS_TRACEPATH_VERSION}" \
+        "traceroute=${TRACEROUTE_VERSION}" \
+        "bind9-dnsutils=${BIND9_DNSUTILS_VERSION}" \
+        "bind9-host=${BIND9_HOST_VERSION}" \
+        "netcat-openbsd=${NETCAT_OPENBSD_VERSION}" \
+        "whois=${WHOIS_VERSION}" \
+        "ethtool=${ETHTOOL_VERSION}" \
+        "net-tools=${NET_TOOLS_VERSION}"; then \
       echo ""; \
       echo "AVERTISSEMENT : une version épinglée dans image/versions.env n'est plus disponible."; \
       echo "Installation des versions courantes de trixie — actualiser image/versions.env."; \
       echo ""; \
       apt-get update; \
-      apt-get install -y --no-install-recommends gh glab curl wget jq sshpass rsync python3-pip vim iproute2 procps lsof gnupg bsdextrautils patch xz-utils bzip2 tree; \
+      apt-get install -y --no-install-recommends gh glab curl wget jq sshpass rsync python3-pip vim iproute2 procps lsof gnupg bsdextrautils patch xz-utils bzip2 tree iputils-ping iputils-tracepath traceroute bind9-dnsutils bind9-host netcat-openbsd whois ethtool net-tools; \
     fi; \
     rm -rf /var/lib/apt/lists/*
 
@@ -89,7 +98,8 @@ RUN set -eux; \
 # Vérifie que tous les outils attendus sont présents et trace leurs versions
 # dans les logs de build : le build échoue si un outil manque.
 RUN set -eux; \
-    for c in curl wget jq yq git ssh scp sshpass rsync python3 pip3 vim gh glab docker ip ss ps lsof gpg column patch xz bzip2 tree; do \
+    for c in curl wget jq yq git ssh scp sshpass rsync python3 pip3 vim gh glab docker ip ss ps lsof gpg column patch xz bzip2 tree \
+             ping tracepath traceroute dig nslookup host nc netcat whois ethtool netstat ifconfig route arp; do \
       command -v "$c" >/dev/null 2>&1 || { echo "ERREUR : $c est introuvable" >&2; exit 1; }; \
     done; \
     curl --version | head -n 1; \
@@ -114,7 +124,11 @@ RUN set -eux; \
     patch --version | head -n 1; \
     xz --version | head -n 1; \
     bzip2 --version | head -n 1; \
-    tree --version | head -n 1
+    tree --version | head -n 1; \
+    echo "--- diagnostic réseau ---"; \
+    dpkg-query -W -f '${binary:Package} ${Version}\n' \
+      iputils-ping iputils-tracepath traceroute bind9-dnsutils bind9-host \
+      netcat-openbsd whois ethtool net-tools
 
 RUN rm -f /tmp/versions.env
 USER openchamber
