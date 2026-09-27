@@ -14,6 +14,8 @@ ghcr.io/k9fr4n/openchamber:latest
 Raspberry Pi ── conteneur openchamber (port 3000)
 ```
 
+L'image publiée est l'image upstream enrichie des CLI **`gh`** (GitHub) et **`glab`** (GitLab), disponibles dans le terminal intégré et pour l'agent.
+
 ## Prérequis (Pi)
 
 - Raspberry Pi **64 bits** (Pi 4 ou Pi 5 recommandé) sous Raspberry Pi OS 64 bits, Debian ou Ubuntu arm64. Un OS 32 bits ne peut pas exécuter l'image.
@@ -133,6 +135,7 @@ L'image publiée est taguée `latest`, `vX.Y.Z` (ref upstream) et `sha-<commit>`
 ```text
 .
 ├── .github/workflows/build-image.yml  # build arm64 upstream → GHCR
+├── image/Dockerfile                   # surcouche de l'image : ajoute gh + glab
 ├── docker-compose.yml                 # déploiement sur le Pi
 ├── .env.example                       # modèle de configuration
 ├── scripts/update.sh                  # pull + recréation si l'image a changé

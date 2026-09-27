@@ -74,15 +74,30 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Construire et publier l'image
+      - name: Construire l'image de base (upstream)
         uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/arm64
-          push: true
-          tags: |
-            ${{ env.IMAGE }}:latest
-            ${{ env.IMAGE }}:${{ steps.tags.outputs.ref_tag }}
-            ${{ env.IMAGE }}:sha-${{ steps.tags.outputs.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Chargée dans le daemon Docker pour que l'étape suivante en dérive
+          # (le builder docker-container ne voit pas les images locales).
+          load: true
+          tags: openchamber-base:build
+          cache-from: type=gha,scope=upstream
+          cache-to: type=gha,mode=max,scope=upstream
+
+      - name: Construire et publier l'image finale (gh + glab)
+        env:
+          IMAGE: ${{ env.IMAGE }}
+          REF_TAG: ${{ steps.tags.outputs.ref_tag }}
+          SHA: ${{ steps.tags.outputs.sha }}
+        run: |
+          docker build \
+            --build-arg BASE_IMAGE=openchamber-base:build \
+            --tag "$IMAGE:latest" \
+            --tag "$IMAGE:$REF_TAG" \
+            --tag "$IMAGE:sha-$SHA" \
+            image/
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:$REF_TAG"
+          docker push "$IMAGE:sha-$SHA"
