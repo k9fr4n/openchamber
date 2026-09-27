@@ -1,0 +1,56 @@
+# Déploiement OpenChamber pour Raspberry Pi (arm64).
+#
+# L'image est construite par GitHub Actions depuis les sources upstream
+# (openchamber/openchamber) et publiée sur ghcr.io/k9fr4n/openchamber.
+# Voir README.md pour la procédure complète.
+
+services:
+  openchamber:
+    image: ${OPENCHAMBER_IMAGE:-ghcr.io/k9fr4n/openchamber:latest}
+    container_name: openchamber
+    ports:
+      - "${OPENCHAMBER_PORT:-3000}:3000"
+    extra_hosts:
+      # Permet au conteneur de joindre des services du Pi (OpenCode externe, etc.).
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./data/openchamber:/home/openchamber/.config/openchamber
+      - ./data/opencode/share:/home/openchamber/.local/share/opencode
+      - ./data/opencode/state:/home/openchamber/.local/state/opencode
+      - ./data/opencode/config:/home/openchamber/.config/opencode
+      - ./data/ssh:/home/openchamber/.ssh
+      # Espace de travail exposé à l'agent (défaut : ./workspaces).
+      # Personnalisable via WORKSPACES_DIR dans .env.
+      - ${WORKSPACES_DIR:-./workspaces}:/home/openchamber/workspaces
+    environment:
+      # Le port est mappé depuis 0.0.0.0 : l'authentification UI est obligatoire.
+      # Définir OPENCHAMBER_UI_PASSWORD dans .env (voir .env.example).
+      OPENCHAMBER_UI_PASSWORD: ${OPENCHAMBER_UI_PASSWORD:?Définir OPENCHAMBER_UI_PASSWORD dans .env}
+
+      # Tunnel Cloudflare intégré (cloudflared est embarqué dans l'image).
+      # Décommenter pour exposer OpenChamber hors du LAN sans ouvrir de port :
+      # OPENCHAMBER_TUNNEL_PROVIDER: cloudflare
+      # OPENCHAMBER_TUNNEL_MODE: quick
+      #
+      # Tunnel Cloudflare géré (nom de domaine + token) :
+      # OPENCHAMBER_TUNNEL_MODE: managed-remote
+      # OPENCHAMBER_TUNNEL_HOSTNAME: openchamber.example.com
+      # OPENCHAMBER_TUNNEL_TOKEN: votre_token_cloudflare
+
+      # Utiliser un serveur OpenCode externe au lieu de celui embarqué :
+      # OPENCODE_HOST: http://host.docker.internal:4096
+      # OPENCODE_SKIP_START: "true"
+
+    healthcheck:
+      # Vérifie que le serveur écoute sur le port 3000 (indépendant de l'auth UI).
+      test:
+        - CMD
+        - node
+        - -e
+        - "const net=require('net');const s=net.connect(3000,'127.0.0.1',()=>{s.destroy();process.exit(0)});s.on('error',()=>process.exit(1));setTimeout(()=>process.exit(1),2000)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+
+    restart: unless-stopped

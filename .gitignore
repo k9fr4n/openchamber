@@ -1,0 +1,8 @@
+# Secrets et configuration locale
+.env
+
+# Données persistantes du conteneur (créées au premier lancement)
+data/
+
+# Espace de travail de l'agent
+workspaces/
