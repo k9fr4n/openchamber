@@ -26,7 +26,12 @@ RUN set -eux; \
         "gh=${GH_VERSION}" \
         "glab=${GLAB_VERSION}" \
         "curl=${CURL_VERSION}" \
+        "wget=${WGET_VERSION}" \
         "jq=${JQ_VERSION}" \
+        "sshpass=${SSHPASS_VERSION}" \
+        "rsync=${RSYNC_VERSION}" \
+        "python3-pip=${PYTHON3_PIP_VERSION}" \
+        "vim=${VIM_VERSION}" \
         "iproute2=${IPROUTE2_VERSION}" \
         "procps=${PROCPS_VERSION}" \
         "lsof=${LSOF_VERSION}"; then \
@@ -35,7 +40,7 @@ RUN set -eux; \
       echo "Installation des versions courantes de trixie — actualiser image/versions.env."; \
       echo ""; \
       apt-get update; \
-      apt-get install -y --no-install-recommends gh glab curl jq iproute2 procps lsof; \
+      apt-get install -y --no-install-recommends gh glab curl wget jq sshpass rsync python3-pip vim iproute2 procps lsof; \
     fi; \
     rm -rf /var/lib/apt/lists/*
 
@@ -75,14 +80,26 @@ RUN set -eux; \
     install -m 0755 "/tmp/yq_linux_${yq_arch}" /usr/local/bin/yq; \
     rm -f "/tmp/yq_linux_${yq_arch}"
 
-# Trace des versions installées dans les logs de build.
+# Vérifie que tous les outils attendus sont présents et trace leurs versions
+# dans les logs de build : le build échoue si un outil manque.
 RUN set -eux; \
+    for c in curl wget jq yq git ssh scp sshpass rsync python3 pip3 vim gh glab docker ip ss ps lsof; do \
+      command -v "$c" >/dev/null 2>&1 || { echo "ERREUR : $c est introuvable" >&2; exit 1; }; \
+    done; \
+    curl --version | head -n 1; \
+    wget --version | head -n 1; \
+    jq --version; \
+    yq --version; \
+    git --version; \
+    ssh -V 2>&1; \
+    sshpass -V | head -n 1; \
+    rsync --version | head -n 1; \
+    python3 --version; \
+    pip3 --version; \
+    vim --version | head -n 1; \
     gh --version | head -n 1; \
     glab --version; \
     docker --version; \
-    curl --version | head -n 1; \
-    jq --version; \
-    yq --version; \
     ip -V; \
     ps --version; \
     lsof -v 2>&1 | head -n 2

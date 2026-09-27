@@ -14,7 +14,7 @@ ghcr.io/k9fr4n/openchamber:latest
 Raspberry Pi ── conteneur openchamber (port 3000)
 ```
 
-L'image publiée est l'image upstream enrichie d'outils en ligne de commande : **`gh`** (GitHub), **`glab`** (GitLab), **`docker`** (client), **`curl`**, **`jq`**, **`yq`**, **`iproute2`**, **`procps`** et **`lsof`**. Leurs versions sont centralisées dans [`image/versions.env`](image/versions.env).
+L'image publiée est l'image upstream enrichie d'outils en ligne de commande : **`gh`**, **`glab`**, **`docker`** (client), **`curl`**, **`wget`**, **`jq`**, **`yq`**, **`sshpass`**, **`rsync`**, **`vim`**, **`pip`**, **`iproute2`**, **`procps`** et **`lsof`** — en plus de **`git`**, **`openssh-client`** et **`python3`** fournis par l'image upstream. Leurs versions sont centralisées dans [`image/versions.env`](image/versions.env).
 
 ## Prérequis (Pi)
 
@@ -155,7 +155,7 @@ git pull
 
 Le script ne recrée le conteneur que si l'image a changé.
 
-Pour les outils installés dans l'image (`gh`, `glab`, `docker`, `curl`, `jq`, `yq`, `iproute2`, `procps`, `lsof`), les versions se mettent à jour dans [`image/versions.env`](image/versions.env) : modifier une valeur, pousser sur `main` — le workflow reconstruit l'image automatiquement.
+Pour les outils installés dans l'image (`gh`, `glab`, `docker`, `curl`, `wget`, `jq`, `yq`, `sshpass`, `rsync`, `vim`, `iproute2`, `procps`, `lsof`), les versions se mettent à jour dans [`image/versions.env`](image/versions.env) : modifier une valeur, pousser sur `main` — le workflow reconstruit l'image automatiquement.
 
 L'image publiée est taguée `latest`, `vX.Y.Z` (ref upstream) et `sha-<commit>` ; pour épingler une version précise, définir `OPENCHAMBER_IMAGE=ghcr.io/k9fr4n/openchamber:vX.Y.Z` dans `.env`.
 
