@@ -40,21 +40,27 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 # CLI Docker (binaire statique officiel) : pilote le démon de l'hôte à travers
-# /var/run/docker.sock, monté par Docker Compose.
+# /var/run/docker.sock, monté par Docker Compose. Archive vérifiée par SHA256.
 RUN set -eux; \
     . /tmp/versions.env; \
     case "$(dpkg --print-architecture)" in \
-      arm64) docker_arch=aarch64 ;; \
-      amd64) docker_arch=x86_64 ;; \
+      arm64) docker_arch=aarch64; sha_var=DOCKER_CLI_SHA256_ARM64 ;; \
+      amd64) docker_arch=x86_64; sha_var=DOCKER_CLI_SHA256_AMD64 ;; \
       *) echo "architecture non gérée : $(dpkg --print-architecture)" >&2; exit 1 ;; \
     esac; \
     curl -fsSL -o /tmp/docker.tgz \
       "https://download.docker.com/linux/static/stable/${docker_arch}/docker-${DOCKER_CLI_VERSION}.tgz"; \
+    eval "docker_sha=\${${sha_var}:-}"; \
+    if [ -n "$docker_sha" ]; then \
+      printf '%s  %s\n' "$docker_sha" /tmp/docker.tgz | sha256sum -c -; \
+    else \
+      echo "AVERTISSEMENT : ${sha_var} vide dans versions.env, archive non vérifiée."; \
+    fi; \
     tar -xzf /tmp/docker.tgz -C /tmp; \
     install -m 0755 /tmp/docker/docker /usr/local/bin/docker; \
     rm -rf /tmp/docker /tmp/docker.tgz
 
-# yq (mikefarah) : binaire officiel, vérifié par somme SHA256.
+# yq (mikefarah) : binaire officiel, vérifié par le fichier checksums-bsd.
 RUN set -eux; \
     . /tmp/versions.env; \
     case "$(dpkg --print-architecture)" in \
@@ -64,10 +70,10 @@ RUN set -eux; \
     esac; \
     base="https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}"; \
     curl -fsSL -o "/tmp/yq_linux_${yq_arch}" "${base}/yq_linux_${yq_arch}"; \
-    curl -fsSL -o /tmp/yq_checksums "${base}/checksums"; \
-    (cd /tmp && grep -E "[[:space:]]yq_linux_${yq_arch}$" yq_checksums | sha256sum -c -); \
+    hash=$(curl -fsSL "${base}/checksums-bsd" | sed -n "s/^SHA256 (yq_linux_${yq_arch}) = //p"); \
+    printf '%s  %s\n' "$hash" "/tmp/yq_linux_${yq_arch}" | sha256sum -c -; \
     install -m 0755 "/tmp/yq_linux_${yq_arch}" /usr/local/bin/yq; \
-    rm -f "/tmp/yq_linux_${yq_arch}" /tmp/yq_checksums
+    rm -f "/tmp/yq_linux_${yq_arch}"
 
 # Trace des versions installées dans les logs de build.
 RUN set -eux; \
