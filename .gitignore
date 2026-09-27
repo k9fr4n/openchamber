@@ -1,8 +1,14 @@
 # Secrets et configuration locale
 .env
 
-# Données persistantes du conteneur (créées au premier lancement)
-data/
+# Données persistantes du conteneur.
+# Les dossiers sont versionnés (via .gitkeep) pour que le clone soit utilisable
+# directement : Docker créerait sinon les dossiers en root:root, illisibles par
+# le conteneur (UID 1000). Seuls les .gitkeep sont suivis par git.
+data/**/*
+!data/**/
+!data/**/.gitkeep
 
 # Espace de travail de l'agent
-workspaces/
+workspaces/*
+!workspaces/.gitkeep

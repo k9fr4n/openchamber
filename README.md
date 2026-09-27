@@ -75,7 +75,7 @@ Tout est persisté dans le dossier du repo, sur le Pi :
 | `./data/ssh` | `/home/openchamber/.ssh` | Clé SSH générée automatiquement pour les accès Git |
 | `./workspaces` (ou `WORKSPACES_DIR`) | `/home/openchamber/workspaces` | Espace de travail exposé à l'agent |
 
-Le dossier `data/` est ignoré par git : il peut contenir des identifiants.
+Le contenu de `data/` est ignoré par git : il peut contenir des identifiants. Les dossiers vides sont eux versionnés (`.gitkeep`) pour qu'un clone soit directement utilisable — sinon Docker les créerait en `root:root`, illisibles par le conteneur (UID 1000).
 
 ## Espace de travail
 
@@ -116,6 +116,14 @@ L'image publiée est taguée `latest`, `vX.Y.Z` (ref upstream) et `sha-<commit>`
 - **`denied` au téléchargement de l'image** : refaire `docker login ghcr.io` avec un token ayant `read:packages`, ou rendre le package public.
 - **Le workflow Actions échoue** : regarder les logs dans l'onglet *Actions* ; vérifier que le ref upstream demandé existe (`gh api repos/openchamber/openchamber/tags`).
 - **Le port 3000 est déjà pris** : définir `OPENCHAMBER_PORT=3001` dans `.env`.
+- **`EACCES: permission denied` dans les logs, conteneur en boucle de redémarrage** : les dossiers de données appartiennent à `root` (créés par un clone antérieur aux `.gitkeep`). Corriger sans `sudo` :
+
+  ```bash
+  docker run --rm -v "$PWD/data:/data" -v "$PWD/workspaces:/workspaces" alpine:3.21 \
+    sh -c "chown -R 1000:1000 /data /workspaces && chmod 700 /data/ssh"
+  docker compose up -d --force-recreate
+  ```
+
 - **Le conteneur redémarre en boucle** : `docker compose logs openchamber` pour voir la cause (RAM insuffisante, volume mal monté, etc.).
 
 ## Contenu du repo
