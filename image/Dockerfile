@@ -16,17 +16,27 @@ COPY versions.env /tmp/versions.env
 USER root
 
 # Paquets Debian (versions épinglées dans versions.env).
+# Si une épingle a expiré (mise à jour Debian en cours de propagation), on
+# retombe sur les versions courantes de trixie avec un avertissement visible
+# dans les logs de build : le déploiement ne casse pas.
 RUN set -eux; \
     . /tmp/versions.env; \
     apt-get update; \
-    apt-get install -y --no-install-recommends \
+    if ! apt-get install -y --no-install-recommends \
         "gh=${GH_VERSION}" \
         "glab=${GLAB_VERSION}" \
         "curl=${CURL_VERSION}" \
         "jq=${JQ_VERSION}" \
         "iproute2=${IPROUTE2_VERSION}" \
         "procps=${PROCPS_VERSION}" \
-        "lsof=${LSOF_VERSION}"; \
+        "lsof=${LSOF_VERSION}"; then \
+      echo ""; \
+      echo "AVERTISSEMENT : une version épinglée dans image/versions.env n'est plus disponible."; \
+      echo "Installation des versions courantes de trixie — actualiser image/versions.env."; \
+      echo ""; \
+      apt-get update; \
+      apt-get install -y --no-install-recommends gh glab curl jq iproute2 procps lsof; \
+    fi; \
     rm -rf /var/lib/apt/lists/*
 
 # CLI Docker (binaire statique officiel) : pilote le démon de l'hôte à travers
