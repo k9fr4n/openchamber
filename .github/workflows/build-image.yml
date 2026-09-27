@@ -12,6 +12,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/build-image.yml
+      - image/**
 
   # Rebuild manuel depuis l'onglet Actions, avec choix de la version upstream.
   workflow_dispatch:

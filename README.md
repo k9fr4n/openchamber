@@ -14,7 +14,7 @@ ghcr.io/k9fr4n/openchamber:latest
 Raspberry Pi ── conteneur openchamber (port 3000)
 ```
 
-L'image publiée est l'image upstream enrichie des CLI **`gh`** (GitHub) et **`glab`** (GitLab), disponibles dans le terminal intégré et pour l'agent.
+L'image publiée est l'image upstream enrichie d'outils en ligne de commande : **`gh`** (GitHub), **`glab`** (GitLab), **`docker`** (client), **`curl`**, **`jq`**, **`yq`**, **`iproute2`**, **`procps`** et **`lsof`**. Leurs versions sont centralisées dans [`image/versions.env`](image/versions.env).
 
 ## Prérequis (Pi)
 
@@ -113,6 +113,21 @@ docker compose exec openchamber cat ~/.ssh/id_ed25519.pub
 - GitHub : https://github.com/settings/keys
 - GitLab : https://gitlab.ecritel.net/-/user_settings/ssh_keys
 
+## Accès au démon Docker (socket)
+
+Le socket du démon Docker du Pi est monté dans le conteneur, avec le client `docker` : l'agent peut inspecter et gérer les conteneurs, images et volumes de l'hôte.
+
+- Le socket est monté via `/var/run/docker.sock:/var/run/docker.sock`.
+- Compose ajoute le GID du groupe `docker` de l'hôte (`group_add`), réglable via `DOCKER_GID` dans `.env` — le vérifier sur le Pi avec `getent group docker | cut -d: -f3`.
+
+> ⚠️ Le socket Docker donne au conteneur un contrôle équivalent à `root` sur l'hôte (tous les conteneurs, images et volumes du Pi). À garder pour un usage de confiance.
+
+Vérification :
+
+```bash
+docker compose exec openchamber docker ps
+```
+
 ## Espace de travail
 
 Par défaut, l'agent travaille dans `./workspaces`, à côté du repo. Pour travailler sur des repos déjà présents sur le Pi, définir dans `.env` :
@@ -140,6 +155,8 @@ git pull
 
 Le script ne recrée le conteneur que si l'image a changé.
 
+Pour les outils installés dans l'image (`gh`, `glab`, `docker`, `curl`, `jq`, `yq`, `iproute2`, `procps`, `lsof`), les versions se mettent à jour dans [`image/versions.env`](image/versions.env) : modifier une valeur, pousser sur `main` — le workflow reconstruit l'image automatiquement.
+
 L'image publiée est taguée `latest`, `vX.Y.Z` (ref upstream) et `sha-<commit>` ; pour épingler une version précise, définir `OPENCHAMBER_IMAGE=ghcr.io/k9fr4n/openchamber:vX.Y.Z` dans `.env`.
 
 ## Accès distant
@@ -163,6 +180,7 @@ L'image publiée est taguée `latest`, `vX.Y.Z` (ref upstream) et `sha-<commit>`
   ```
 
 - **`gh auth status` ou `glab auth status` indique « non authentifié »** : `GH_TOKEN` / `GITLAB_TOKEN` sont vides dans `.env` (voir la section *Authentification des CLI*).
+- **`permission denied` sur `/var/run/docker.sock`** : `DOCKER_GID` dans `.env` ne correspond pas au groupe `docker` du Pi (`getent group docker | cut -d: -f3`), puis `docker compose up -d`.
 - **Le conteneur redémarre en boucle** : `docker compose logs openchamber` pour voir la cause (RAM insuffisante, volume mal monté, etc.).
 
 ## Contenu du repo
@@ -170,7 +188,8 @@ L'image publiée est taguée `latest`, `vX.Y.Z` (ref upstream) et `sha-<commit>`
 ```text
 .
 ├── .github/workflows/build-image.yml  # build arm64 upstream → GHCR
-├── image/Dockerfile                   # surcouche de l'image : ajoute gh + glab
+├── image/Dockerfile                   # surcouche de l'image : outils CLI
+├── image/versions.env                 # versions des outils (source unique)
 ├── docker-compose.yml                 # déploiement sur le Pi
 ├── .env.example                       # modèle de configuration
 ├── scripts/update.sh                  # pull + recréation si l'image a changé

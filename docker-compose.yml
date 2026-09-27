@@ -13,6 +13,10 @@ services:
     extra_hosts:
       # Permet au conteneur de joindre des services du Pi (OpenCode externe, etc.).
       - "host.docker.internal:host-gateway"
+    # Autorise le conteneur à utiliser le socket Docker monté ci-dessous :
+    # GID du groupe `docker` sur l'hôte (getent group docker | cut -d: -f3).
+    group_add:
+      - "${DOCKER_GID:-985}"
     volumes:
       - ./data/openchamber:/home/openchamber/.config/openchamber
       - ./data/opencode/share:/home/openchamber/.local/share/opencode
@@ -22,6 +26,9 @@ services:
       # Espace de travail exposé à l'agent (défaut : ./workspaces).
       # Personnalisable via WORKSPACES_DIR dans .env.
       - ${WORKSPACES_DIR:-./workspaces}:/home/openchamber/workspaces
+      # ⚠️ Socket du démon Docker du Pi : le conteneur peut créer, modifier et
+      # supprimer des conteneurs/images (contrôle équivalent root sur l'hôte).
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       # Le port est mappé depuis 0.0.0.0 : l'authentification UI est obligatoire.
       # Définir OPENCHAMBER_UI_PASSWORD dans .env (voir .env.example).
