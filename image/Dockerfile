@@ -34,13 +34,19 @@ RUN set -eux; \
         "vim=${VIM_VERSION}" \
         "iproute2=${IPROUTE2_VERSION}" \
         "procps=${PROCPS_VERSION}" \
-        "lsof=${LSOF_VERSION}"; then \
+        "lsof=${LSOF_VERSION}" \
+        "gnupg=${GNUPG_VERSION}" \
+        "bsdextrautils=${BSDEXTRAUTILS_VERSION}" \
+        "patch=${PATCH_VERSION}" \
+        "xz-utils=${XZ_UTILS_VERSION}" \
+        "bzip2=${BZIP2_VERSION}" \
+        "tree=${TREE_VERSION}"; then \
       echo ""; \
       echo "AVERTISSEMENT : une version épinglée dans image/versions.env n'est plus disponible."; \
       echo "Installation des versions courantes de trixie — actualiser image/versions.env."; \
       echo ""; \
       apt-get update; \
-      apt-get install -y --no-install-recommends gh glab curl wget jq sshpass rsync python3-pip vim iproute2 procps lsof; \
+      apt-get install -y --no-install-recommends gh glab curl wget jq sshpass rsync python3-pip vim iproute2 procps lsof gnupg bsdextrautils patch xz-utils bzip2 tree; \
     fi; \
     rm -rf /var/lib/apt/lists/*
 
@@ -83,7 +89,7 @@ RUN set -eux; \
 # Vérifie que tous les outils attendus sont présents et trace leurs versions
 # dans les logs de build : le build échoue si un outil manque.
 RUN set -eux; \
-    for c in curl wget jq yq git ssh scp sshpass rsync python3 pip3 vim gh glab docker ip ss ps lsof; do \
+    for c in curl wget jq yq git ssh scp sshpass rsync python3 pip3 vim gh glab docker ip ss ps lsof gpg column patch xz bzip2 tree; do \
       command -v "$c" >/dev/null 2>&1 || { echo "ERREUR : $c est introuvable" >&2; exit 1; }; \
     done; \
     curl --version | head -n 1; \
@@ -102,7 +108,13 @@ RUN set -eux; \
     docker --version; \
     ip -V; \
     ps --version; \
-    lsof -v 2>&1 | head -n 2
+    lsof -v 2>&1 | head -n 2; \
+    gpg --version | head -n 1; \
+    column --version | head -n 1; \
+    patch --version | head -n 1; \
+    xz --version | head -n 1; \
+    bzip2 --version | head -n 1; \
+    tree --version | head -n 1
 
 RUN rm -f /tmp/versions.env
 USER openchamber
