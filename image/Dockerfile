@@ -1,6 +1,8 @@
 # Surcouche de l'image OpenChamber : outils en ligne de commande.
 #
-# Les versions sont centralisées dans versions.env (source unique).
+# Les versions des binaires amont (docker, yq) sont centralisées dans
+# versions.env (source unique). Les paquets Debian ne sont pas épinglés : ils
+# suivent la version courante de trixie.
 # En CI, BASE_IMAGE pointe vers l'image de base construite localement ;
 # on peut aussi construire depuis l'image publiée :
 #
@@ -15,48 +17,17 @@ COPY versions.env /tmp/versions.env
 # repasser root uniquement le temps d'installer les outils.
 USER root
 
-# Paquets Debian (versions épinglées dans versions.env).
-# Si une épingle a expiré (mise à jour Debian en cours de propagation), on
-# retombe sur les versions courantes de trixie avec un avertissement visible
-# dans les logs de build : le déploiement ne casse pas.
+# Paquets Debian : installés dans la version courante de trixie par APT.
+# Ils ne sont volontairement pas épinglés (voir versions.env) : une épingle
+# périmait régulièrement et le build retombait alors sur la version courante,
+# pour une maintenance constante sans reproductibilité réelle.
 RUN set -eux; \
-    . /tmp/versions.env; \
     apt-get update; \
-    if ! apt-get install -y --no-install-recommends \
-        "gh=${GH_VERSION}" \
-        "glab=${GLAB_VERSION}" \
-        "curl=${CURL_VERSION}" \
-        "wget=${WGET_VERSION}" \
-        "jq=${JQ_VERSION}" \
-        "sshpass=${SSHPASS_VERSION}" \
-        "rsync=${RSYNC_VERSION}" \
-        "python3-pip=${PYTHON3_PIP_VERSION}" \
-        "vim=${VIM_VERSION}" \
-        "iproute2=${IPROUTE2_VERSION}" \
-        "procps=${PROCPS_VERSION}" \
-        "lsof=${LSOF_VERSION}" \
-        "gnupg=${GNUPG_VERSION}" \
-        "bsdextrautils=${BSDEXTRAUTILS_VERSION}" \
-        "patch=${PATCH_VERSION}" \
-        "xz-utils=${XZ_UTILS_VERSION}" \
-        "bzip2=${BZIP2_VERSION}" \
-        "tree=${TREE_VERSION}" \
-        "iputils-ping=${IPUTILS_PING_VERSION}" \
-        "iputils-tracepath=${IPUTILS_TRACEPATH_VERSION}" \
-        "traceroute=${TRACEROUTE_VERSION}" \
-        "bind9-dnsutils=${BIND9_DNSUTILS_VERSION}" \
-        "bind9-host=${BIND9_HOST_VERSION}" \
-        "netcat-openbsd=${NETCAT_OPENBSD_VERSION}" \
-        "whois=${WHOIS_VERSION}" \
-        "ethtool=${ETHTOOL_VERSION}" \
-        "net-tools=${NET_TOOLS_VERSION}"; then \
-      echo ""; \
-      echo "AVERTISSEMENT : une version épinglée dans image/versions.env n'est plus disponible."; \
-      echo "Installation des versions courantes de trixie — actualiser image/versions.env."; \
-      echo ""; \
-      apt-get update; \
-      apt-get install -y --no-install-recommends gh glab curl wget jq sshpass rsync python3-pip vim iproute2 procps lsof gnupg bsdextrautils patch xz-utils bzip2 tree iputils-ping iputils-tracepath traceroute bind9-dnsutils bind9-host netcat-openbsd whois ethtool net-tools; \
-    fi; \
+    apt-get install -y --no-install-recommends \
+        gh glab curl wget jq sshpass rsync python3-pip vim iproute2 procps \
+        lsof gnupg bsdextrautils patch xz-utils bzip2 tree \
+        iputils-ping iputils-tracepath traceroute bind9-dnsutils bind9-host \
+        netcat-openbsd whois ethtool net-tools; \
     rm -rf /var/lib/apt/lists/*
 
 # CLI Docker (binaire statique officiel) : pilote le démon de l'hôte à travers
