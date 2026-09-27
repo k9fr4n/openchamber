@@ -27,6 +27,13 @@ services:
       # Définir OPENCHAMBER_UI_PASSWORD dans .env (voir .env.example).
       OPENCHAMBER_UI_PASSWORD: ${OPENCHAMBER_UI_PASSWORD:?Définir OPENCHAMBER_UI_PASSWORD dans .env}
 
+      # CLI authentifiées par variables d'environnement (voir README).
+      # gh → github.com via GH_TOKEN ; glab → GITLAB_HOST via GITLAB_TOKEN.
+      GH_TOKEN: ${GH_TOKEN:-}
+      GITLAB_TOKEN: ${GITLAB_TOKEN:-}
+      GITLAB_HOST: ${GITLAB_HOST:-gitlab.ecritel.net}
+      GITLAB_API_HOST: ${GITLAB_API_HOST:-gitlab.ecritel.net}
+
       # Tunnel Cloudflare intégré (cloudflared est embarqué dans l'image).
       # Décommenter pour exposer OpenChamber hors du LAN sans ouvrir de port :
       # OPENCHAMBER_TUNNEL_PROVIDER: cloudflare

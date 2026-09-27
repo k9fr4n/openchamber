@@ -79,6 +79,40 @@ Tout est persisté dans le dossier du repo, sur le Pi :
 
 Le contenu de `data/` est ignoré par git : il peut contenir des identifiants. Les dossiers vides sont eux versionnés (`.gitkeep`) pour qu'un clone soit directement utilisable — sinon Docker les créerait en `root:root`, illisibles par le conteneur (UID 1000).
 
+## Authentification des CLI (gh / glab)
+
+L'image embarque `gh` (GitHub) et `glab` (GitLab). Les deux sont authentifiés par variables d'environnement, injectées par Compose depuis `.env` — rien à configurer dans le conteneur, et les jetons ne sont jamais commités.
+
+| Variable | CLI | Rôle |
+| --- | --- | --- |
+| `GH_TOKEN` | `gh` | Token GitHub (github.com), portée `repo` (+ `workflow` si nécessaire) |
+| `GITLAB_TOKEN` | `glab` | Token GitLab (gitlab.ecritel.net), portée `api` (+ `write_repository` si nécessaire) |
+| `GITLAB_HOST` / `GITLAB_API_HOST` | `glab` | Instance GitLab ciblée (défaut : `gitlab.ecritel.net`) |
+
+Création des tokens :
+
+- GitHub : https://github.com/settings/tokens (token classique)
+- GitLab : https://gitlab.ecritel.net/-/user_settings/personal_access_tokens
+
+Après avoir renseigné `.env`, recréer le conteneur et vérifier :
+
+```bash
+docker compose up -d
+docker compose exec openchamber gh auth status
+docker compose exec openchamber glab auth status
+```
+
+### Opérations git en SSH (optionnel)
+
+Pour que l'agent puisse cloner ou pousser en SSH, ajouter la clé publique du conteneur à tes comptes GitHub/GitLab :
+
+```bash
+docker compose exec openchamber cat ~/.ssh/id_ed25519.pub
+```
+
+- GitHub : https://github.com/settings/keys
+- GitLab : https://gitlab.ecritel.net/-/user_settings/ssh_keys
+
 ## Espace de travail
 
 Par défaut, l'agent travaille dans `./workspaces`, à côté du repo. Pour travailler sur des repos déjà présents sur le Pi, définir dans `.env` :
@@ -128,6 +162,7 @@ L'image publiée est taguée `latest`, `vX.Y.Z` (ref upstream) et `sha-<commit>`
   docker compose up -d --force-recreate
   ```
 
+- **`gh auth status` ou `glab auth status` indique « non authentifié »** : `GH_TOKEN` / `GITLAB_TOKEN` sont vides dans `.env` (voir la section *Authentification des CLI*).
 - **Le conteneur redémarre en boucle** : `docker compose logs openchamber` pour voir la cause (RAM insuffisante, volume mal monté, etc.).
 
 ## Contenu du repo
