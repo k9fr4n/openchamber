@@ -1,8 +1,6 @@
-# Déploiement OpenChamber pour Raspberry Pi (arm64).
-#
-# L'image est construite par GitHub Actions depuis les sources upstream
-# (openchamber/openchamber) et publiée sur ghcr.io/k9fr4n/openchamber.
-# Voir README.md pour la procédure complète.
+# Deployment OpenChamber pour Raspberry Pi (arm64).
+# Frontal HTTPS : Traefik (/home/kfr/docker/traefic, reseau externe "proxy").
+# Acces : https://openchamber.ecritel.net (Traefik:443) + LAN http://<pi>:3000.
 
 services:
   openchamber:
@@ -10,11 +8,20 @@ services:
     container_name: openchamber
     ports:
       - "${OPENCHAMBER_PORT:-3000}:3000"
+    expose:
+      - "3000"
+    networks:
+      - default
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.openchamber.rule=Host(`openchamber.ecritel.net`)"
+      - "traefik.http.routers.openchamber.entrypoints=websecure"
+      - "traefik.http.routers.openchamber.tls=true"
+      - "traefik.http.services.openchamber.loadbalancer.server.port=3000"
     extra_hosts:
-      # Permet au conteneur de joindre des services du Pi (OpenCode externe, etc.).
       - "host.docker.internal:host-gateway"
-    # Autorise le conteneur à utiliser le socket Docker monté ci-dessous :
-    # GID du groupe `docker` sur l'hôte (getent group docker | cut -d: -f3).
     group_add:
       - "${DOCKER_GID:-985}"
     volumes:
@@ -23,40 +30,15 @@ services:
       - ./data/opencode/state:/home/openchamber/.local/state/opencode
       - ./data/opencode/config:/home/openchamber/.config/opencode
       - ./data/ssh:/home/openchamber/.ssh
-      # Espace de travail exposé à l'agent (défaut : ./workspaces).
-      # Personnalisable via WORKSPACES_DIR dans .env.
       - ${WORKSPACES_DIR:-./workspaces}:/home/openchamber/workspaces
-      # ⚠️ Socket du démon Docker du Pi : le conteneur peut créer, modifier et
-      # supprimer des conteneurs/images (contrôle équivalent root sur l'hôte).
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      # Le port est mappé depuis 0.0.0.0 : l'authentification UI est obligatoire.
-      # Définir OPENCHAMBER_UI_PASSWORD dans .env (voir .env.example).
-      OPENCHAMBER_UI_PASSWORD: ${OPENCHAMBER_UI_PASSWORD:?Définir OPENCHAMBER_UI_PASSWORD dans .env}
-
-      # CLI authentifiées par variables d'environnement (voir README).
-      # gh → github.com via GH_TOKEN ; glab → GITLAB_HOST via GITLAB_TOKEN.
+      OPENCHAMBER_UI_PASSWORD: ${OPENCHAMBER_UI_PASSWORD:?Definir OPENCHAMBER_UI_PASSWORD dans .env}
       GH_TOKEN: ${GH_TOKEN:-}
       GITLAB_TOKEN: ${GITLAB_TOKEN:-}
       GITLAB_HOST: ${GITLAB_HOST:-gitlab.ecritel.net}
       GITLAB_API_HOST: ${GITLAB_API_HOST:-gitlab.ecritel.net}
-
-      # Tunnel Cloudflare intégré (cloudflared est embarqué dans l'image).
-      # Décommenter pour exposer OpenChamber hors du LAN sans ouvrir de port :
-      # OPENCHAMBER_TUNNEL_PROVIDER: cloudflare
-      # OPENCHAMBER_TUNNEL_MODE: quick
-      #
-      # Tunnel Cloudflare géré (nom de domaine + token) :
-      # OPENCHAMBER_TUNNEL_MODE: managed-remote
-      # OPENCHAMBER_TUNNEL_HOSTNAME: openchamber.example.com
-      # OPENCHAMBER_TUNNEL_TOKEN: votre_token_cloudflare
-
-      # Utiliser un serveur OpenCode externe au lieu de celui embarqué :
-      # OPENCODE_HOST: http://host.docker.internal:4096
-      # OPENCODE_SKIP_START: "true"
-
     healthcheck:
-      # Vérifie que le serveur écoute sur le port 3000 (indépendant de l'auth UI).
       test:
         - CMD
         - node
@@ -66,5 +48,9 @@ services:
       timeout: 5s
       retries: 3
       start_period: 90s
-
     restart: unless-stopped
+
+networks:
+  proxy:
+    name: proxy
+    external: true
