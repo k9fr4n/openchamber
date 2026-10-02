@@ -144,7 +144,7 @@ Le dossier monté est accessible en lecture/écriture par l'agent : ne monter qu
 
 Deux façons de reconstruire l'image depuis une nouvelle version upstream :
 
-- **Depuis GitHub** : onglet *Actions* → *Build image arm64* → *Run workflow* → indiquer le tag souhaité (ex. `v2.0.4`).
+- **Depuis GitHub** : onglet *Actions* → *Build image arm64* → *Run workflow* → indiquer le tag souhaité (ex. `v2.1.0`).
 - **Via un commit** : changer `UPSTREAM_REF_DEFAULT` dans `.github/workflows/build-image.yml` puis pousser sur `main` — la build se déclenche automatiquement.
 
 Ensuite, sur le Pi :
