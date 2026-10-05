@@ -14,7 +14,7 @@ ghcr.io/k9fr4n/openchamber:latest
 Raspberry Pi ── conteneur openchamber (port 3000)
 ```
 
-L'image publiée est l'image upstream enrichie d'outils en ligne de commande : **`gh`**, **`glab`**, **`docker`** (client), **`curl`**, **`wget`**, **`jq`**, **`yq`**, **`sshpass`**, **`rsync`**, **`vim`**, **`pip`**, **`iproute2`**, **`procps`**, **`lsof`**, **`gpg`**, **`column`**, **`patch`**, **`xz`**, **`bzip2`** et **`tree`** — en plus de **`git`**, **`openssh-client`** et **`python3`** fournis par l'image upstream.
+L'image publiée est l'image upstream enrichie d'outils en ligne de commande : **`gh`**, **`glab`**, **`docker`** (client), **`curl`**, **`wget`**, **`jq`**, **`yq`**, **`codebase-memory-mcp`** (serveur MCP d'indexation du code, voir ci-dessous), **`sshpass`**, **`rsync`**, **`vim`**, **`pip`**, **`iproute2`**, **`procps`**, **`lsof`**, **`gpg`**, **`column`**, **`patch`**, **`xz`**, **`bzip2`** et **`tree`** — en plus de **`git`**, **`openssh-client`** et **`python3`** fournis par l'image upstream.
 
 Le diagnostic réseau est couvert par **`ping`** (y compris `ping -6`), **`tracepath`**, **`traceroute`**, **`dig`**, **`nslookup`**, **`host`**, **`nc`**, **`whois`**, **`ethtool`**, ainsi que les commandes héritées **`netstat`**, **`ifconfig`**, **`route`** et **`arp`**. Ces outils viennent des paquets Debian de l'image, installés dans leur version courante.
 
@@ -140,6 +140,36 @@ WORKSPACES_DIR=/home/pi/gitlab
 
 Le dossier monté est accessible en lecture/écriture par l'agent : ne monter que ce qui est nécessaire.
 
+## Indexation du code (codebase-memory-mcp)
+
+L'image embarque [`codebase-memory-mcp`](https://github.com/DeusData/codebase-memory-mcp) (`/usr/local/bin/codebase-memory-mcp`), un serveur MCP qui indexe le code en graphe de connaissances local (recherche structurelle, callers/callees, architecture). L'auto-indexation est activée dans l'image (`codebase-memory-mcp config set auto_index true`) : un projet est indexé automatiquement à la première session MCP, sans demande explicite.
+
+Pour l'exposer à l'agent, déclarer le serveur dans `opencode.json` (fichier persisté via le volume `data/opencode/config`). Le point important est **`"codemode": false`** : sans cela, OpenCode regroupe les 17 outils derrière le Code Mode au lieu de les exposer directement, ce que ce serveur ne supporte pas bien :
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "codebase-memory-mcp": {
+        "type": "local",
+        "command": ["/usr/local/bin/codebase-memory-mcp"],
+        "codemode": false
+      }
+    }
+  }
+}
+```
+
+Vérification dans le conteneur :
+
+```bash
+docker compose exec openchamber codebase-memory-mcp --version
+docker compose exec openchamber codebase-memory-mcp config get auto_index
+```
+
+> Note : `codebase-memory-mcp install --clients=opencode` écrit la même entrée (sans `codemode`) dans le fichier managé d'OpenChamber ; préférer la déclaration ci-dessus dans `opencode.json` pour garder `codemode: false`.
+
 ## Mettre à jour la version d'OpenChamber
 
 Deux façons de reconstruire l'image depuis une nouvelle version upstream :
@@ -157,7 +187,7 @@ git pull
 
 Le script ne recrée le conteneur que si l'image a changé.
 
-Tous les paquets Debian de l'image (c'est-à-dire tous les outils sauf `docker` et `yq`) suivent la version courante de trixie : ils sont rafraîchis à chaque rebuild, sans épingle à maintenir. Seuls les binaires amont **`docker`** et **`yq`** sont épinglés dans [`image/versions.env`](image/versions.env) : modifier une valeur, pousser sur `main` — le workflow reconstruit l'image automatiquement.
+Tous les paquets Debian de l'image (c'est-à-dire tous les outils sauf `docker`, `yq` et `codebase-memory-mcp`) suivent la version courante de trixie : ils sont rafraîchis à chaque rebuild, sans épingle à maintenir. Seuls les binaires amont **`docker`**, **`yq`** et **`codebase-memory-mcp`** sont épinglés dans [`image/versions.env`](image/versions.env) : modifier une valeur, pousser sur `main` — le workflow reconstruit l'image automatiquement.
 
 L'image publiée est taguée `latest`, `vX.Y.Z` (ref upstream) et `sha-<commit>` ; pour épingler une version précise, définir `OPENCHAMBER_IMAGE=ghcr.io/k9fr4n/openchamber:vX.Y.Z` dans `.env`.
 
@@ -191,7 +221,7 @@ L'image publiée est taguée `latest`, `vX.Y.Z` (ref upstream) et `sha-<commit>`
 .
 ├── .github/workflows/build-image.yml  # build arm64 upstream → GHCR
 ├── image/Dockerfile                   # surcouche de l'image : outils CLI
-├── image/versions.env                 # versions des binaires amont (docker, yq)
+├── image/versions.env                 # versions des binaires amont (docker, yq, codebase-memory-mcp)
 ├── docker-compose.yml                 # déploiement sur le Pi
 ├── .env.example                       # modèle de configuration
 ├── scripts/update.sh                  # pull + recréation si l'image a changé
