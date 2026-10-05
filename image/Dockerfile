@@ -127,6 +127,10 @@ USER openchamber
 
 # Seed codebase-memory-mcp defaults into the image layer (~/.cache is not a
 # mounted volume, so this survives container restarts) : new projects are
-# indexed automatically on first MCP session instead of on explicit request.
+# indexed automatically on first MCP session instead of on explicit request,
+# and the 3D graph UI is served on port 9749 (same defaults as
+# `codebase-memory-mcp --ui=true --port=9749`, persisted via config keys).
 RUN codebase-memory-mcp config set auto_index true && \
-    codebase-memory-mcp config get auto_index
+    codebase-memory-mcp config set ui_enabled true && \
+    codebase-memory-mcp config set ui_port 9749 && \
+    codebase-memory-mcp config list
