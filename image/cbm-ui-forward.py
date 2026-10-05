@@ -56,7 +56,8 @@ def build_upstream_head(raw):
     request_line = lines[0]
     kept = [request_line, b"Host: %s:%d" % (TARGET_HOST.encode(), TARGET_PORT)]
     for line in lines[1:]:
-        if not line or HEADER_END.strip() in line:
+        # Only the empty line before the CRLFCRLF terminator is skipped.
+        if not line:
             continue
         name = line.split(b":", 1)[0]
         if DROP_HEADERS.match(name.decode("latin-1")):
