@@ -144,7 +144,19 @@ Le dossier monté est accessible en lecture/écriture par l'agent : ne monter qu
 
 L'image embarque [`codebase-memory-mcp`](https://github.com/DeusData/codebase-memory-mcp) (`/usr/local/bin/codebase-memory-mcp`), un serveur MCP qui indexe le code en graphe de connaissances local (recherche structurelle, callers/callees, architecture). L'auto-indexation est activée dans l'image (`codebase-memory-mcp config set auto_index true`) : un projet est indexé automatiquement à la première session MCP, sans demande explicite.
 
-L'UI 3D de visualisation du graphe est activée dans l'image (équivalent persisté de `codebase-memory-mcp --ui=true --port=9749`, via `config set ui_enabled true` + `config set ui_port 9749`) et le port `9749` est publié par Compose (`CBM_UI_PORT`, défaut `9749`) : ouvrir `http://<ip-du-pi>:9749` après une première session MCP — c'est le serveur MCP qui sert l'UI, elle ne répond donc qu'une fois le daemon démarré (première requête agent).
+L'UI 3D de visualisation du graphe est activée dans l'image (équivalent persisté de `codebase-memory-mcp --ui=true --port=9749`, via `config set ui_enabled true` + `config set ui_port 9749`) et servie par le conteneur `openchamber` lui-même : l'UI n'écoutant que sur `127.0.0.1` sans option d'adresse, l'image embarque un forwarder stdlib (`image/cbm-ui-forward.py`, `0.0.0.0:9748` → `127.0.0.1:9749`), démarré par un wrapper d'entrypoint (`image/openchamber-entrypoint-with-cbm-ui.sh`), et les labels Traefik (`https://cbm-ui.ecritel.net` → port `9748`) sont posés via `LABEL` dans le Dockerfile. Ni `docker-compose.yml` ni le compose des MCP ne sont touchés : une seule instance, un seul index — celui de l'agent. L'UI ne répond qu'après démarrage du daemon (première session MCP).
+
+> ⚠️ L'UI n'a aucune authentification. Ne pas exposer `cbm-ui.ecritel.net` sans protection (middleware Traefik `ipAllowList` ou `basicAuth`) si le Pi est joignable depuis Internet.
+
+Accès LAN (optionnel, non commité) : ajouter dans `docker-compose.yml`, sous `ports` :
+
+```yaml
+      - "${CBM_UI_PORT:-9749}:9748"
+```
+
+puis ouvrir `http://<ip-du-pi>:9749`.
+
+> ⚠️ L'UI n'a aucune authentification. Ne pas exposer `cbm-ui.ecritel.net` sans protection (middleware Traefik `ipAllowList` ou `basicAuth`) si le Pi est joignable depuis Internet.
 
 Pour l'exposer à l'agent, déclarer le serveur dans `opencode.json` (fichier persisté via le volume `data/opencode/config`). Le point important est **`"codemode": false`** : sans cela, OpenCode regroupe les 17 outils derrière le Code Mode au lieu de les exposer directement, ce que ce serveur ne supporte pas bien :
 
@@ -170,7 +182,8 @@ docker compose exec openchamber codebase-memory-mcp --version
 docker compose exec openchamber codebase-memory-mcp config get auto_index
 docker compose exec openchamber codebase-memory-mcp config get ui_enabled
 docker compose exec openchamber codebase-memory-mcp config get ui_port
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:9749/
+docker compose exec openchamber curl -s -o /dev/null -w "%{http_code}\n" http://localhost:9748/   # via le forwarder
+docker compose exec openchamber curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:9749/  # UI directe
 ```
 
 > Note : `codebase-memory-mcp install --clients=opencode` écrit la même entrée (sans `codemode`) dans le fichier managé d'OpenChamber ; préférer la déclaration ci-dessus dans `opencode.json` pour garder `codemode: false`.

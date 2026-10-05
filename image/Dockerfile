@@ -122,6 +122,16 @@ RUN set -eux; \
       iputils-ping iputils-tracepath traceroute bind9-dnsutils bind9-host \
       netcat-openbsd whois ethtool net-tools
 
+# Forwarder 0.0.0.0:9748 -> 127.0.0.1:9749 : l'UI cbm n'écoute que sur
+# localhost, sans option d'adresse d'écoute — Traefik et les ports publiés
+# sont sans effet sans ce pont (stdlib uniquement, voir cbm-ui-forward.py).
+# Le wrapper démarre ce forwarder puis l'entrypoint standard (voir ENTRYPOINT
+# en fin de fichier) : aucun changement nécessaire dans docker-compose.yml.
+COPY cbm-ui-forward.py openchamber-entrypoint-with-cbm-ui.sh /usr/local/bin/
+RUN chmod 0755 /usr/local/bin/cbm-ui-forward.py /usr/local/bin/openchamber-entrypoint-with-cbm-ui.sh && \
+    python3 -B -m py_compile /usr/local/bin/cbm-ui-forward.py && \
+    sh -n /usr/local/bin/openchamber-entrypoint-with-cbm-ui.sh
+
 RUN rm -f /tmp/versions.env
 USER openchamber
 
@@ -134,3 +144,19 @@ RUN codebase-memory-mcp config set auto_index true && \
     codebase-memory-mcp config set ui_enabled true && \
     codebase-memory-mcp config set ui_port 9749 && \
     codebase-memory-mcp config list
+
+# Labels Traefik via l'image : l'UI cbm est servie par ce conteneur
+# (forwarder 9748, voir ci-dessus), sans toucher à docker-compose.yml ni au
+# compose des MCP — une seule instance, un seul index (celui de l'agent).
+# Pas de port LAN publié ici : ajouter "- ${CBM_UI_PORT:-9749}:9748" dans
+# Compose si besoin (voir README).
+LABEL traefik.enable="true" \
+      traefik.docker.network="proxy" \
+      traefik.http.routers.cbm-ui.rule="Host(`cbm-ui.ecritel.net`)" \
+      traefik.http.routers.cbm-ui.entrypoints="websecure" \
+      traefik.http.routers.cbm-ui.tls="true" \
+      traefik.http.services.cbm-ui.loadbalancer.server.port="9748"
+
+# Wrapper : forwarder UI cbm + entrypoint standard. Les args éventuels
+# (command:, exec, run) sont transmis à l'entrypoint d'origine.
+ENTRYPOINT ["/usr/local/bin/openchamber-entrypoint-with-cbm-ui.sh"]

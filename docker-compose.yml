@@ -8,10 +8,8 @@ services:
     container_name: openchamber
     ports:
       - "${OPENCHAMBER_PORT:-3000}:3000"
-      - "${CBM_UI_PORT:-9749}:9749"
     expose:
       - "3000"
-      - "9749"
     networks:
       - default
       - proxy
