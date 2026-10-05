@@ -20,6 +20,17 @@ services:
       - "traefik.http.routers.openchamber.entrypoints=websecure"
       - "traefik.http.routers.openchamber.tls=true"
       - "traefik.http.services.openchamber.loadbalancer.server.port=3000"
+      # UI 3D codebase-memory-mcp, servie par ce même conteneur via le
+      # forwarder embarqué dans l'image (0.0.0.0:9748 -> 127.0.0.1:9749).
+      # Liaisons routeur->service explicites : obligatoires dès qu'un
+      # conteneur expose deux services, sinon Traefik refuse les deux
+      # routeurs ("cannot be linked automatically with multiple Services").
+      - "traefik.http.routers.openchamber.service=openchamber"
+      - "traefik.http.routers.cbm-ui.rule=Host(`cbm-ui.ecritel.net`)"
+      - "traefik.http.routers.cbm-ui.entrypoints=websecure"
+      - "traefik.http.routers.cbm-ui.tls=true"
+      - "traefik.http.routers.cbm-ui.service=cbm-ui"
+      - "traefik.http.services.cbm-ui.loadbalancer.server.port=9748"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     group_add:

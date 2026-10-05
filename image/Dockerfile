@@ -145,17 +145,10 @@ RUN codebase-memory-mcp config set auto_index true && \
     codebase-memory-mcp config set ui_port 9749 && \
     codebase-memory-mcp config list
 
-# Labels Traefik via l'image : l'UI cbm est servie par ce conteneur
-# (forwarder 9748, voir ci-dessus), sans toucher à docker-compose.yml ni au
-# compose des MCP — une seule instance, un seul index (celui de l'agent).
-# Pas de port LAN publié ici : ajouter "- ${CBM_UI_PORT:-9749}:9748" dans
-# Compose si besoin (voir README).
-LABEL traefik.enable="true" \
-      traefik.docker.network="proxy" \
-      traefik.http.routers.cbm-ui.rule="Host(`cbm-ui.ecritel.net`)" \
-      traefik.http.routers.cbm-ui.entrypoints="websecure" \
-      traefik.http.routers.cbm-ui.tls="true" \
-      traefik.http.services.cbm-ui.loadbalancer.server.port="9748"
+# Note : les labels Traefik de l'UI sont dans docker-compose.yml (convention
+# du repo : tout le routage est déclaré côté compose), pas ici : quand un
+# conteneur expose deux services (openchamber:3000 + cbm-ui:9748), Traefik
+# exige une liaison routeur->service explicite, posée côté compose.
 
 # Wrapper : forwarder UI cbm + entrypoint standard. Les args éventuels
 # (command:, exec, run) sont transmis à l'entrypoint d'origine.
