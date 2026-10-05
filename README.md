@@ -146,7 +146,7 @@ L'image embarque [`codebase-memory-mcp`](https://github.com/DeusData/codebase-me
 
 L'UI 3D de visualisation du graphe est activée dans l'image (équivalent persisté de `codebase-memory-mcp --ui=true --port=9749`, via `config set ui_enabled true` + `config set ui_port 9749`) et servie par le conteneur `openchamber` lui-même : l'UI n'écoutant que sur `127.0.0.1` sans option d'adresse, l'image embarque un forwarder stdlib (`image/cbm-ui-forward.py`, `0.0.0.0:9748` → `127.0.0.1:9749`), démarré par un wrapper d'entrypoint (`image/openchamber-entrypoint-with-cbm-ui.sh`). Le routage Traefik (`https://cbm-ui.ecritel.net` → port `9748`) est déclaré dans `docker-compose.yml`, avec des liaisons routeur→service explicites : dès qu'un conteneur expose deux services, Traefik refuse les routeurs sans liaison explicite (`cannot be linked automatically with multiple Services`) — sans elles, même `openchamber.ecritel.net` tombe en 404. Le compose des MCP n'est pas touché : une seule instance, un seul index — celui de l'agent. L'UI ne répond qu'après démarrage du daemon (première session MCP).
 
-> ⚠️ L'UI n'a aucune authentification. Ne pas exposer `cbm-ui.ecritel.net` sans protection (middleware Traefik `ipAllowList` ou `basicAuth`) si le Pi est joignable depuis Internet.
+> ⚠️ L'UI n'a aucune authentification. Ne pas exposer `cbm-ui.ecritel.net` sans protection (middleware Traefik `ipAllowList` ou `basicAuth`) si le Pi est joignable depuis Internet. Note : l'UI refuse tout `Host` non-local (`403 forbidden host`, anti-rebinding) — le routeur réécrit donc `Host` en `127.0.0.1` via le middleware `cbm-ui-host` après le routage.
 
 Accès LAN (optionnel, non commité) : ajouter dans `docker-compose.yml`, sous `ports` :
 
@@ -155,8 +155,6 @@ Accès LAN (optionnel, non commité) : ajouter dans `docker-compose.yml`, sous `
 ```
 
 puis ouvrir `http://<ip-du-pi>:9749`.
-
-> ⚠️ L'UI n'a aucune authentification. Ne pas exposer `cbm-ui.ecritel.net` sans protection (middleware Traefik `ipAllowList` ou `basicAuth`) si le Pi est joignable depuis Internet.
 
 Pour l'exposer à l'agent, déclarer le serveur dans `opencode.json` (fichier persisté via le volume `data/opencode/config`). Le point important est **`"codemode": false`** : sans cela, OpenCode regroupe les 17 outils derrière le Code Mode au lieu de les exposer directement, ce que ce serveur ne supporte pas bien :
 

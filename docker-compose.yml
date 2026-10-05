@@ -30,6 +30,11 @@ services:
       - "traefik.http.routers.cbm-ui.entrypoints=websecure"
       - "traefik.http.routers.cbm-ui.tls=true"
       - "traefik.http.routers.cbm-ui.service=cbm-ui"
+      # L'UI refuse tout Host non-local (403 "forbidden host", protection
+      # anti-rebinding) : réécrire Host en 127.0.0.1 après le routage
+      # (le routage, lui, se fait sur le Host d'origine).
+      - "traefik.http.routers.cbm-ui.middlewares=cbm-ui-host"
+      - "traefik.http.middlewares.cbm-ui-host.headers.customrequestheaders.Host=127.0.0.1"
       - "traefik.http.services.cbm-ui.loadbalancer.server.port=9748"
     extra_hosts:
       - "host.docker.internal:host-gateway"
