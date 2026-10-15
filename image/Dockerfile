@@ -132,6 +132,14 @@ RUN chmod 0755 /usr/local/bin/cbm-ui-forward.py /usr/local/bin/openchamber-entry
     python3 -B -m py_compile /usr/local/bin/cbm-ui-forward.py && \
     sh -n /usr/local/bin/openchamber-entrypoint-with-cbm-ui.sh
 
+# xdg-open shim for headless container: CLI tools (e.g. `opencode auth login`)
+# spawn `xdg-open <url>` to start a browser OAuth/device flow. There is no
+# browser inside the container, so print the URL instead and let the user
+# open it on the host. Real xdg-utils would still fail without a browser.
+RUN printf '#!/bin/sh\nprintf "Open in your browser: %%s\\n" "$*"\n' > /usr/local/bin/xdg-open && \
+    chmod 0755 /usr/local/bin/xdg-open && \
+    xdg-open "https://example.invalid/__selftest__"
+
 RUN rm -f /tmp/versions.env
 USER openchamber
 
