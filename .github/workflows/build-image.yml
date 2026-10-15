@@ -20,14 +20,14 @@ on:
       ref:
         description: "Ref upstream openchamber/openchamber (tag, branche ou SHA)"
         required: true
-        default: "v2.1.0"
+        default: "v2.3.3"
 
 env:
   UPSTREAM_REPOSITORY: openchamber/openchamber
   # Version upstream épinglée pour les rebuilds automatiques.
   # Pour mettre à jour : changer cette valeur puis pousser sur main,
   # ou lancer le workflow manuellement avec un autre `ref`.
-  UPSTREAM_REF_DEFAULT: v2.1.0
+  UPSTREAM_REF_DEFAULT: v2.3.3
   IMAGE: ghcr.io/${{ github.repository }}
 
 permissions:
