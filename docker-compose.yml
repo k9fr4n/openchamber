@@ -43,6 +43,13 @@ services:
       - ./data/opencode/state:/home/openchamber/.local/state/opencode
       - ./data/opencode/config:/home/openchamber/.config/opencode
       - ./data/ssh:/home/openchamber/.ssh
+      # Index codebase-memory-mcp : config + une .db par projet indexé.
+      # Sans ce volume, chaque recréation du conteneur efface tous les index
+      # (constaté le 2026-10-16 : conteneur recréé à 06:11, un seul projet
+      # réindexé ensuite). Ne JAMAIS persister /tmp/cbm-daemon-* en revanche :
+      # les sockets/locks de coordination doivent rester éphémères, sinon un
+      # daemon mort bloque tout redémarrage (même panne).
+      - ./data/cbm-cache:/home/openchamber/.cache/codebase-memory-mcp
       - ${WORKSPACES_DIR:-./workspaces}:/home/openchamber/workspaces
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
