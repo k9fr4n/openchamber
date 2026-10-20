@@ -1,12 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "5f19b33e6fd4fee9dcbe491fd33303591209d6d6",
-    "indexed_at": "2026-10-05T11:24:55Z",
+    "commit": "9416fb195c7b7c21f55633a2cff501c640b0e740",
+    "indexed_at": "2026-10-20T13:15:17Z",
     "project": "home-openchamber-workspaces-openchamber",
-    "nodes": 49,
-    "edges": 58,
-    "original_size": 1703936,
-    "compressed_size": 15697,
-    "compression_level": 9,
-    "reconcile_basis": "git-clean-head"
+    "nodes": 79,
+    "edges": 112,
+    "original_size": 2424832,
+    "compressed_size": 71583,
+    "compression_level": 3
 }

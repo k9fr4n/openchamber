@@ -195,7 +195,7 @@ docker compose exec openchamber curl -s -o /dev/null -w "%{http_code}\n" http://
 
 Deux façons de reconstruire l'image depuis une nouvelle version upstream :
 
-- **Depuis GitHub** : onglet *Actions* → *Build image arm64* → *Run workflow* → indiquer le tag souhaité (ex. `v2.3.3`).
+- **Depuis GitHub** : onglet *Actions* → *Build image arm64* → *Run workflow* → indiquer le tag souhaité (ex. `v2.5.0`).
 - **Via un commit** : changer `UPSTREAM_REF_DEFAULT` dans `.github/workflows/build-image.yml` puis pousser sur `main` — la build se déclenche automatiquement.
 
 Ensuite, sur le Pi :
