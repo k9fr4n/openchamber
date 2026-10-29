@@ -187,6 +187,7 @@ Si une étape échoue et bloque la mise en service, transmettre uniquement :
 | --- | --- |
 | `playwright` absent de `opencode mcp list` | Relancer `setup-playwright-mcp.sh`, puis `docker compose up -d` (recréation d'`openchamber` requise pour le réseau `browser`) |
 | `MCP KO` / timeout vers `playwright-mcp:8931` | `docker compose ps`, `docker compose logs playwright-mcp` ; vérifier `PLAYWRIGHT_MCP_PORT` identique côté compose et `opencode.json` |
+| 403 `Access is only allowed at ...` | Host non allowlisté côté serveur MCP : vérifier `--allowed-hosts` dans `docker-compose.yml` (comparé sur `host:port`, doit contenir `playwright-mcp:<port>`), puis `docker compose up -d` |
 | Chromium crash / pages blanches (`shm`) | Augmenter `shm_size`, ou alléger la page ; vérifier la RAM libre du Pi |
 | `si.ecritel.net` injoignable (NXDOMAIN/timeout) | Voir § 4 : DNS interne / VPN Ecritel côté Pi |
 | Login SSO impossible en headless | Blocage authentifié (§ 7), pas de contournement |
