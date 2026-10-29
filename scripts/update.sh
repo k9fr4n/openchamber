@@ -1,25 +1,31 @@
 #!/usr/bin/env bash
-# Met à jour OpenChamber : récupère la dernière image GHCR et recrée le
-# conteneur uniquement si l'image a changé.
+# Met à jour OpenChamber : récupère les dernières images de TOUS les services
+# du compose (openchamber, playwright-mcp, ...) et recrée uniquement les
+# conteneurs dont l'image ou la configuration a changé (`up -d` ne touche
+# pas aux conteneurs déjà à jour, pas besoin de --force-recreate).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-docker compose pull openchamber
+# IDs des images utilisées par les conteneurs avant mise à jour
+# (vide au premier lancement).
+before=$(for c in $(docker compose ps -q 2>/dev/null); do
+  docker inspect --format '{{.Image}}' "$c"
+done 2>/dev/null | sort -u || true)
 
-# ID de l'image utilisée par le conteneur (vide s'il n'existe pas encore).
-CURRENT_ID=$(docker inspect --format '{{.Image}}' openchamber 2>/dev/null || true)
+docker compose pull
 
-# Référence d'image résolue par Compose (tient compte de .env).
-TARGET_REF=$(docker compose config --images | head -n1)
-TARGET_ID=$(docker image inspect "$TARGET_REF" --format '{{.Id}}')
+docker compose up -d
 
-if [ -n "$CURRENT_ID" ] && [ "$CURRENT_ID" = "$TARGET_ID" ]; then
-  echo "Déjà à jour ($TARGET_REF)."
-  docker compose up -d
+# IDs après mise à jour : identiques => rien n'a changé.
+after=$(for c in $(docker compose ps -q 2>/dev/null); do
+  docker inspect --format '{{.Image}}' "$c"
+done 2>/dev/null | sort -u || true)
+
+if [ -n "$before" ] && [ "$before" = "$after" ]; then
+  echo "Déjà à jour."
 else
-  echo "Nouvelle image détectée, recréation du conteneur..."
-  docker compose up -d --force-recreate
-  # Nettoie l'ancienne image devenue orpheline.
+  echo "Conteneurs mis à jour."
+  # Nettoie les anciennes images devenues orphelines.
   docker image prune -f >/dev/null
 fi
 
