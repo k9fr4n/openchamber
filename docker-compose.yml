@@ -13,7 +13,6 @@ services:
     networks:
       - default
       - proxy
-      - browser
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
@@ -71,68 +70,7 @@ services:
       start_period: 90s
     restart: unless-stopped
 
-  # Navigation Web autonome : Chromium headless + serveur Playwright MCP dans
-  # un conteneur dédié. OpenCode (dans `openchamber`) s'y connecte en MCP
-  # distant via le réseau privé `browser` :
-  #   { "mcp": { "playwright": { "type": "remote",
-  #     "url": "http://playwright-mcp:8931/mcp" } } }
-  # Voir docs/playwright-mcp.md (installation, session authentifiée,
-  # politique lecture seule, dépannage).
-  #
-  # Sécurité :
-  # - aucun port publié, aucune route Traefik : le serveur MCP n'est
-  #   joignable que depuis le réseau `browser` (pas d'exposition publique) ;
-  # - le trafic sortant (Internet / si.ecritel.net) reste autorisé : ne PAS
-  #   passer le réseau `browser` en `internal: true`, sinon Chromium ne
-  #   pourrait plus joindre aucun site ;
-  # - le profil Chromium (cookies, sessions) est persisté dans
-  #   ./data/playwright-profile (jamais commité, voir .gitignore).
-  playwright-mcp:
-    image: ${PLAYWRIGHT_MCP_IMAGE:-mcr.microsoft.com/playwright/mcp:v0.0.83}
-    container_name: playwright-mcp
-    # L'ENTRYPOINT de l'image ajoute déjà :
-    #   --headless --browser chromium --no-sandbox
-    # On ajoute le transport HTTP (écouté uniquement sur le réseau `browser`)
-    # et les chemins persistés.
-    command:
-      - --port
-      - "${PLAYWRIGHT_MCP_PORT:-8931}"
-      - --host
-      - "0.0.0.0"
-      - --user-data-dir
-      - /home/node/playwright-profile
-      - --output-dir
-      - /home/node/playwright-output
-      - --timeout-action
-      - "10000"
-      - --timeout-navigation
-      - "60000"
-    environment:
-      PLAYWRIGHT_MCP_PORT: "${PLAYWRIGHT_MCP_PORT:-8931}"
-    networks:
-      - browser
-    volumes:
-      - ./data/playwright-profile:/home/node/playwright-profile
-      - ./data/playwright-output:/home/node/playwright-output
-    # Chromium a besoin d'un /dev/shm suffisant pour ne pas crasher
-    # (recommandation Playwright officielle). Réduire sur un Pi peu doté
-    # en RAM si le système swap (voir docs/playwright-mcp.md).
-    shm_size: 1gb
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - node -e "const net=require('net');const p=parseInt(process.env.PLAYWRIGHT_MCP_PORT||'8931',10);const s=net.connect(p,'127.0.0.1',()=>{s.destroy();process.exit(0)});s.on('error',()=>process.exit(1));setTimeout(()=>{process.exit(1)},2000)"
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 60s
-    restart: unless-stopped
-
 networks:
   proxy:
     name: proxy
     external: true
-  # Réseau privé OpenChamber <-> navigateur. Pas de ports publiés ni de
-  # labels Traefik : aucune entrée depuis l'extérieur.
-  browser:
-    name: openchamber-browser

@@ -191,16 +191,6 @@ docker compose exec openchamber curl -s -o /dev/null -w "%{http_code}\n" http://
 
 > Note : `codebase-memory-mcp install --clients=opencode` écrit la même entrée (sans `codemode`) dans le fichier managé d'OpenChamber ; préférer la déclaration ci-dessus dans `opencode.json` pour garder `codemode: false`.
 
-## Navigation Web autonome (Playwright MCP)
-
-Un service `playwright-mcp` (image officielle Microsoft `mcr.microsoft.com/playwright/mcp`, Chromium headless, compatible arm64) permet à l'agent de naviguer sur des sites Web — en priorité `https://si.ecritel.net` (tickets, CMDB) en **lecture seule**.
-
-- Réseau Docker privé `browser` entre `openchamber` et le navigateur : aucun port publié, aucune route Traefik.
-- Profil Chromium persisté dans `./data/playwright-profile` (sessions conservées après redémarrage).
-- Déclaration côté OpenCode via `./scripts/setup-playwright-mcp.sh` (ajoute `mcp.playwright` en `remote` sans écraser l'existant).
-
-Installation, vérifications, authentification, politique lecture seule et dépannage : voir [`docs/playwright-mcp.md`](docs/playwright-mcp.md).
-
 ## Mettre à jour la version d'OpenChamber
 
 Deux façons de reconstruire l'image depuis une nouvelle version upstream :
