@@ -94,20 +94,11 @@ services:
     #   --headless --browser chromium --no-sandbox
     # On ajoute le transport HTTP (écouté uniquement sur le réseau `browser`)
     # et les chemins persistés.
-    #
-    # --allowed-hosts : le serveur refuse par défaut tout Host autre que
-    # celui du bind (403 "Access is only allowed at localhost:8931").
-    # OpenCode s'y connecte via le nom DNS Docker `playwright-mcp`, donc
-    # l'en-tête Host vaut `playwright-mcp:<port>` : il doit être allowlisté
-    # explicitement (comparaison sur host:port, en minuscules). Pas de `*` :
-    # on reste strict, le réseau `browser` isolant déjà le serveur.
     command:
       - --port
       - "${PLAYWRIGHT_MCP_PORT:-8931}"
       - --host
       - "0.0.0.0"
-      - --allowed-hosts
-      - "playwright-mcp:${PLAYWRIGHT_MCP_PORT:-8931},localhost:${PLAYWRIGHT_MCP_PORT:-8931},127.0.0.1:${PLAYWRIGHT_MCP_PORT:-8931}"
       - --user-data-dir
       - /home/node/playwright-profile
       - --output-dir
