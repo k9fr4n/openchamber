@@ -169,8 +169,6 @@ Si une étape échoue et bloque la mise en service, transmettre uniquement :
 
 - **Redémarrage** : `docker compose up -d` suffit ; les deux services sont en
   `restart: unless-stopped` et le profil persiste.
-- **Mise à jour courante** : `./scripts/update.sh` tire les dernières images
-  de *tous* les services et ne recrée que les conteneurs qui ont changé.
 - **Mise à jour du navigateur** : modifier `PLAYWRIGHT_MCP_IMAGE`
   (ex. `mcr.microsoft.com/playwright/mcp:v0.0.84`), vérifier le support
   arm64 (`docker manifest inspect`), puis
